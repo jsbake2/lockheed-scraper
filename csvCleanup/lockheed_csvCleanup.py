@@ -12,8 +12,6 @@ import asciiClean
 from asciiClean import ascii_clean
 from sys import argv
 import datetime
-#  clearance,description,title,reqid,loclink,location,clearanceAndJunk
-#csvFile = 'csvWork.csv'
 logFile = 'logfile'
 csvFile = 'csvWork.csv'
 outFile = 'csvFinal.csv'
@@ -24,7 +22,7 @@ LOG = open(logFile, 'w')
 
 # Open CSV output stream
 logDate= datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
-companyName = 'Lochkeed'
+companyName = 'Lockheed Martin'
 output = open('/home/jbaker/Desktop/'+companyName+'_'+logDate+'_'+outFile, 'wb')
 output2 = open('/home/jbaker/Desktop/'+companyName+'_2_'+logDate+'_'+outFile, 'wb')
 wr = csv.writer(output, quoting=csv.QUOTE_ALL)
@@ -38,6 +36,16 @@ csv.register_dialect(
   skipinitialspace=True,
   lineterminator='\r\n',
   quoting=csv.QUOTE_MINIMAL)
+
+def finder(messy,findMe):
+  found = 'UNKNOWN'
+  for m in range(len(messy)):
+    messS = re.split('\n', messy[m])
+    for s in range(len(messS)):
+      if re.search(findMe, messS[s]):
+        if s + 1 != len(messS):
+          found=re.sub('\s*<.+>(.*)<.+>\s*',r'\1',messS[s+1])
+  return found
 
 def asciiCleanup():
   print 'done'
@@ -53,18 +61,33 @@ with open(csvFile, 'rb') as mycsv:
   for row in data:
     keyw   = ''
     keywordsLoc = ''
-    title  = row[1]
-    desc   = row[0]
-    req    = row[8]
-    travel = row[7]
-    loc    = row[5]
-    loc    = re.sub("<.+>(.+)<.+>",r'\1',loc)
-    title  = re.sub("<.+>(.+)<.+>",r'\1',title)
-    appUrl = row[4]
-    cl_1   = row[2]
-    cl_2   = row[3]
-    job_c  = row[6]
-    title = re.sub('^\s+|\s+$', '',title)
+    desc    = row[1]
+    appUrl = row[0]
+    title   = row[3]
+    messL   = row[3:]
+    reqL = re.split('/', appUrl)
+    if (len(reqL) > 4):
+      req = reqL[5]
+    else:
+      req = 'UNKNOWN'
+    state         = finder(messL,'State')
+    shift         = finder(messL,'Shift')
+    city          = finder(messL,'City')
+    reqType       = finder(messL,'Req Type')
+    workSchedule  = finder(messL,'Work Schedule')
+    virtual       = finder(messL,'Vitrual')
+    businessUnit  = finder(messL,'Business Unit')
+    addiLoca      = finder(messL,'Additional Posting Locations')
+    reloc         = finder(messL,'Relocation Available')
+    prog          = finder(messL,'Program')
+    clearanceRaw  = finder(messL,'Security Clearance')
+    jobClass      = finder(messL,'Job Class')
+    job_c         = finder(messL,'Job Category')
+    
+    loc = city+', '+state
+    
+    #print req
+    #print '\n\n\n'
     if re.match('location', loc):
       LOG.write("Skipping header field")
     elif len(desc) == 0:
@@ -75,19 +98,15 @@ with open(csvFile, 'rb') as mycsv:
       doneThis[req] = "TRUE"
       # This is the final fix for REQ
       req=re.sub(".+ID=(\d+)\&.+",r'\1',req)
-      clearance,keywords = clear.clear(cl_2)
-      clearance_2,keywords_2 = clear.clear(cl_1)
-      if re.match("^$|None", clearance):
-          clearance = clearance_2
-          keywords = keywords_2
+      clearance,keywords = clear.clear(clearanceRaw)
+
+      loc,lat,lon,keywordsLoc = parser.loc(loc,"lockheed")
       for i in keywords:
         keyw=keyw+' '+i
-      keyw=re.sub('^ ','',keyw)
-      loc,lat,lon,keywordsLoc = parser.loc(loc,"lockheed")
-      keyw = keyw + ' ' + keywordsLoc
+      keyw = keyw + ' ' + keywordsLoc+ ' ' +addiLoca
       #print loc + ' ||||||||||||| THIS IS FUCKED UP ||||||||||||| ' + keywordsLoc
       
-      finalList = [title, appUrl, desc, loc, infoComp, infoDesc, infoSite, infoLogo, infoFace, infoTwit, infoLinked, req, 'UNKNOWN', travel, lat, lon, infoBeni, job_c, clearance, keyw]
+      finalList = [title, appUrl, desc, loc, infoComp, infoDesc, infoSite, infoLogo, infoFace, infoTwit, infoLinked, req, 'UNKNOWN', virtual, lat, lon, infoBeni, job_c, clearance, keyw]
 
       for a in range(len(finalList)):
         finalList[a] = ascii_clean.cleanUp(finalList[a])
