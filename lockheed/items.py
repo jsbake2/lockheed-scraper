@@ -14,6 +14,7 @@ class LochkeedItem(scrapy.Item):
     applink = scrapy.Field()
     description = scrapy.Field()
     page_url = scrapy.Field()
+    req = scrapy.Field()
     f01 = scrapy.Field()
     f02 = scrapy.Field()
     f03 = scrapy.Field()

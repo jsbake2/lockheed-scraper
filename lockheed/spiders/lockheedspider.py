@@ -69,6 +69,7 @@ class LochkeedSpider(CrawlSpider):
       job = sel.xpath('//*[@id="job-table"]')
       item = LochkeedItem()
       # Populate job fields
+      item['req'] = job.xpath('//*[@id="content"]').extract()
       item['title'] = job.xpath('//*[@id="content"]/div/div/header/h1/text()').extract()
       item['description'] = job.xpath('//*[@id="content"]/div/div/div[2]/div/div[2]/div[3]/div[2]').extract()
       item['f01'] = job.xpath('//*[@id="content"]/div/div/div[2]/div/div[2]/div[4]').extract()
@@ -90,6 +91,7 @@ class LochkeedSpider(CrawlSpider):
       item['title'] = stripUnicode(item['title'])
       item['description'] = stripUnicode(item['description'])
       item['applink'] = stripUnicode(item['applink'])
+      item['req'] = stripUnicode(item['req'])
       item['f01'] = stripUnicode(item['f01'])
       item['f02'] = stripUnicode(item['f02'])
       item['f03'] = stripUnicode(item['f03'])
@@ -103,7 +105,6 @@ class LochkeedSpider(CrawlSpider):
       item['f11'] = stripUnicode(item['f11'])
       item['f12'] = stripUnicode(item['f12'])
       item['f13'] = stripUnicode(item['f13'])
-
       L.write((str(item['page_url']))+"\n")
       return item
 
