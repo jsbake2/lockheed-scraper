@@ -12,6 +12,10 @@ import asciiClean
 from asciiClean import ascii_clean
 from sys import argv
 import datetime
+import cleanTags
+from cleanTags import cleanTag
+import categories
+from categories import category
 logFile = 'logfile'
 csvFile = 'csvWork.csv'
 outFile = 'csvFinal.csv'
@@ -54,11 +58,22 @@ def asciiCleanup():
   print 'done'
 
 
-wr.writerow(['title', 'apply_url', 'job_description', 'location', 'company_name', 'company_description', 'company_website', 'company_logo', 'company_facebook', 'company_twitter', 'company_linkedin', 'career_id', 'deployment', 'travel', 'job_lat', 'job_lon', 'company_benefits', 'job_category', 'clearance', 'keywords'])
+def stripUnicode(unimess):
+  if re.search('list',str(type(unimess))):
+    if len(unimess) >= 1:
+      return unimess[0].encode('utf-8').strip()
+    else:
+      return unimess
+  elif (re.search('str|uni', unimess)):
+    return unimess.encode('utf-8').strip()
+  else:
+    return unimess
 
-wr2.writerow(['title', 'apply_url', 'job_description', 'location', 'company_name', 'company_description', 'company_website', 'company_logo', 'company_facebook', 'company_twitter', 'company_linkedin', 'career_id', 'deployment', 'travel', 'job_lat', 'job_lon', 'company_benefits', 'job_category', 'clearance', 'keywords'])
+wr.writerow(['title', 'apply_url', 'job_description', 'location', 'company_name', 'company_description', 'company_website', 'company_logo', 'company_facebook', 'company_twitter', 'company_linkedin', 'career_id', 'deployment', 'travel', 'job_lat', 'job_lon', 'company_benefits', 'job_category', 'clearance', 'keywords','author'])
 
-infoComp,infoDesc,infoSite,infoLogo,infoFace,infoTwit,infoLinked,infoBeni=companyinfo.infofiller(companyName)
+wr2.writerow(['title', 'apply_url', 'job_description', 'location', 'company_name', 'company_description', 'company_website', 'company_logo', 'company_facebook', 'company_twitter', 'company_linkedin', 'career_id', 'deployment', 'travel', 'job_lat', 'job_lon', 'company_benefits', 'job_category', 'clearance', 'keywords','author'])
+
+infoComp,infoDesc,infoSite,infoLogo,infoFace,infoTwit,infoLinked,infoBeni,author=companyinfo.infofiller(companyName)
 
 with open(csvFile, 'rb') as mycsv:
   data=csv.reader(mycsv, dialect='mydialect')
@@ -119,13 +134,18 @@ with open(csvFile, 'rb') as mycsv:
         #print "Here we are (conus): "+loc
         loc,lat,lon,keywordsLoc = parser.loc(loc,"lockheed")
       else:
-        #print "Here we are(oconus): "+forLoc
+        print "Here we are(oconus): "+forLoc
         loc,lat,lon,keywordsLoc = parser.loc(forLoc,"lockheedO")
       for i in keywords:
         keyw=keyw+' '+i
       keyw = keyw + ' ' + keywordsLoc+ ' ' +addiLoca
       appUrl = re.sub("',",'',applyLink[1])
-
+      desc = cleanTag(desc)
+      desc = stripUnicode(desc)
+      job_c = category(job_c,job_c)
+      if re.match('Other', job_c):
+        job_c = category(desc,title)
+      req = re.sub('^\s_|\s+$','',req)
       finalList = [title, appUrl, desc, loc, infoComp, infoDesc, infoSite, infoLogo, infoFace, infoTwit, infoLinked, req, 'UNKNOWN', virtual, lat, lon, infoBeni, job_c, clearance, keyw]
 
       for a in range(len(finalList)):
